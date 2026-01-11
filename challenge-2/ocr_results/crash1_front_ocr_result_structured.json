@@ -1,0 +1,53 @@
+{
+  "vehicle_side": "front",
+  "front_specific": {
+    "windshield_damage": "null",
+    "front_bumper_damage": "null",
+    "headlights_damage": "null",
+    "hood_damage": "null",
+    "grille_damage": "null",
+    "license_plate_visible": true,
+    "front_damage_severity": "null"
+  },
+  "document_type": "statement",
+  "extracted_data": {
+    "policy_holder": {
+      "name": "John Peterson",
+      "policy_number": "LIAB-AUTO-001"
+    },
+    "incident": {
+      "date": "2025-07-17",
+      "type": "vehicle_collision",
+      "description": "Vehicle legally parked in a market parking space was struck on the front end and driver's side by a gray pickup truck attempting to park beside it. The other driver failed to judge distance and collided, causing significant damage. The other driver waited for police.",
+      "location": "Parking Lot, 2325 Main Street, Springfield, OH 45503"
+    },
+    "damages": {
+      "description": "Significant damage to front end and driver's side reported, no specific details on parts or costs.",
+      "estimated_amount": null,
+      "currency": "USD",
+      "items": []
+    },
+    "vehicle_info": {
+      "make": "Honda",
+      "model": "Accord",
+      "year": 2004,
+      "license_plate": "OH-GHR1984",
+      "vin": "1HGCH56404A123456"
+    },
+    "contact_info": {
+      "phone": "(937) 555-2319",
+      "email": "john.peterson@email.com",
+      "address": "1142 Pinecrest Avenue, Springfield, OH 45503"
+    },
+    "additional_details": "No explicit damage details on windshield, bumper, headlights, hood, or grille provided."
+  },
+  "confidence": "high",
+  "extraction_notes": "No explicit damage conditions for front-specific parts were described in the statement. License plate is visible and readable. Date standardized. Document classified as statement based on content.",
+  "metadata": {
+    "source_file": "/workspaces/claims-processing-hack/challenge-0/data/statements/crash1_front.jpeg",
+    "detected_vehicle_side": "front",
+    "processing_timestamp": "2026-01-10T19:50:46.143747",
+    "agent_model": "gpt-4.1-mini",
+    "original_text_length": 1032
+  }
+}

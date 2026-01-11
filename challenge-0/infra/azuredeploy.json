@@ -32,6 +32,7 @@
     "aiProjectName": "[format('{0}-aiproject-{1}', variables('prefix'), variables('suffix'))]",
     "applicationInsightsName": "[format('{0}-appinsights-{1}', variables('prefix'), variables('suffix'))]",
     "cosmosDbAccountName": "[format('{0}-cosmos-{1}', variables('prefix'), variables('suffix'))]",
+    "documentIntelligenceName": "[format('{0}-docintel-{1}', variables('prefix'), variables('suffix'))]",
     "cognitiveServicesUserRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
     "searchServiceContributorRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')]",
     "aiDeveloperRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')]",
@@ -148,6 +149,24 @@
       "dependsOn": [
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
       ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[variables('documentIntelligenceName')]",
+      "location": "westeurope",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "S0"
+      },
+      "kind": "FormRecognizer",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "customSubDomainName": "[variables('documentIntelligenceName')]",
+        "publicNetworkAccess": "Enabled"
+      }
     },
     {
       "type": "Microsoft.KeyVault/vaults",
@@ -386,6 +405,14 @@
     "cosmosDbEndpoint": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbAccountName')), '2023-04-15').documentEndpoint]"
+    },
+    "documentIntelligenceName": {
+      "type": "string",
+      "value": "[variables('documentIntelligenceName')]"
+    },
+    "documentIntelligenceEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('documentIntelligenceName')), '2024-10-01').endpoint]"
     }
   }
 }

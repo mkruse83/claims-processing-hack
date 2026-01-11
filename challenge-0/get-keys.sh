@@ -54,11 +54,13 @@ aiFoundryProjectName=$(az deployment group show --resource-group $resourceGroupN
 keyVaultName=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.keyVaultName.value" -o tsv 2>/dev/null || echo "")
 containerRegistryName=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.containerRegistryName.value" -o tsv 2>/dev/null || echo "")
 applicationInsightsName=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.applicationInsightsName.value" -o tsv 2>/dev/null || echo "")
+documentIntelligenceName=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.documentIntelligenceName.value" -o tsv 2>/dev/null || echo "")
 
 # Extract endpoint URLs
 searchServiceEndpoint=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.searchServiceEndpoint.value" -o tsv 2>/dev/null || echo "")
 aiFoundryHubEndpoint=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.aiFoundryHubEndpoint.value" -o tsv 2>/dev/null || echo "")
 aiFoundryProjectEndpoint=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.aiFoundryProjectEndpoint.value" -o tsv 2>/dev/null || echo "")
+documentIntelligenceEndpoint=$(az deployment group show --resource-group $resourceGroupName --name $deploymentName --query "properties.outputs.documentIntelligenceEndpoint.value" -o tsv 2>/dev/null || echo "")
 
 
 
@@ -96,6 +98,10 @@ if [ -z "$storageAccountName" ] || [ -z "$logAnalyticsWorkspaceName" ] || [ -z "
     
     if [ -z "$applicationInsightsName" ]; then
         applicationInsightsName=$(az resource list --resource-group $resourceGroupName --resource-type "Microsoft.Insights/components" --query "[0].name" -o tsv 2>/dev/null || echo "")
+    fi
+    
+    if [ -z "$documentIntelligenceName" ]; then
+        documentIntelligenceName=$(az cognitiveservices account list --resource-group $resourceGroupName --query "[?kind=='FormRecognizer'].name | [0]" -o tsv 2>/dev/null || echo "")
     fi
 fi
 
@@ -145,6 +151,18 @@ else
     echo "Warning: AI Foundry Hub not found"
     aiFoundryEndpoint=""
     aiFoundryKey=""
+fi
+
+# Document Intelligence
+if [ -n "$documentIntelligenceName" ]; then
+    if [ -z "$documentIntelligenceEndpoint" ]; then
+        documentIntelligenceEndpoint=$(az cognitiveservices account show --name $documentIntelligenceName --resource-group $resourceGroupName --query properties.endpoint -o tsv 2>/dev/null || echo "")
+    fi
+    documentIntelligenceKey=$(az cognitiveservices account keys list --name $documentIntelligenceName --resource-group $resourceGroupName --query key1 -o tsv 2>/dev/null || echo "")
+else
+    echo "Warning: Document Intelligence not found"
+    documentIntelligenceEndpoint=""
+    documentIntelligenceKey=""
 fi
 
 # Search service
@@ -287,6 +305,10 @@ echo "MISTRAL_DOCUMENT_AI_DEPLOYMENT_NAME=\"mistral-document-ai-2505\"" >> ../.e
 echo "MISTRAL_DOCUMENT_AI_ENDPOINT=\"$aiFoundryEndpoint\"" >> ../.env
 echo "MISTRAL_DOCUMENT_AI_KEY=\"$aiFoundryKey\"" >> ../.env
 
+# Document Intelligence
+echo "DOCUMENT_INTELLIGENCE_ENDPOINT=\"$documentIntelligenceEndpoint\"" >> ../.env
+echo "DOCUMENT_INTELLIGENCE_KEY=\"$documentIntelligenceKey\"" >> ../.env
+
 echo "Keys and properties are stored in '.env' file successfully."
 
 # Display summary of what was configured
@@ -301,6 +323,7 @@ echo "AI Foundry Project: $aiFoundryProjectName"
 echo "Key Vault: $keyVaultName"
 echo "Container Registry: $containerRegistryName"
 echo "Application Insights: $applicationInsightsName"
+echo "Document Intelligence: $documentIntelligenceName"
 echo "ACR_NAME=\"$containerRegistryName\"" >> ../.env
 echo "ACR_USERNAME=\"$acr_username\"" >> ../.env
 echo "ACR_PASSWORD=\"$acr_password\"" >> ../.env

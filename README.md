@@ -16,7 +16,7 @@ By participating in this hackathon, you will learn how to:
 
 - **Process Multimodal Documents** using GPT-4o to extract and understand information from text documents, images, and handwritten statements with advanced OCR and vision capabilities.
 - **Build Vectorized Search Systems** with Azure AI Search's integrated vectorization to enable semantic search across insurance policies, claims, and statements using hybrid search (keyword + vector + semantic).
-- **Create Intelligent AI Agents** using Microsoft Agent Framework and Azure AI Foundry to orchestrate document processing workflows, make intelligent decisions, and validate claim information.
+- **Create Intelligent AI Agents** using Microsoft Agent Framework and Microsoft Foundry to orchestrate document processing workflows, make intelligent decisions, and validate claim information.
 - **Implement Function Calling/Tools** to extend agent capabilities with custom tools for OCR, document parsing, policy validation, and claim assessment.
 - **Generate Structured Outputs** from unstructured documents, producing standardized JSON claim reports with validation, confidence scores, and actionable recommendations.
 
@@ -35,10 +35,10 @@ To successfully complete this hackathon, you will need the following:
 
 ## Challenges
 
-- **Challenge 00**: **[Environment Setup & Azure Resource Deployment](challenge-0/README.md)** : Set up your development environment, deploy Azure resources (Azure AI Foundry, Azure OpenAI, Azure AI Search, Blob Storage), configure environment variables, and prepare sample insurance documents for processing
+- **Challenge 00**: **[Environment Setup & Azure Resource Deployment](challenge-0/README.md)** : Set up your development environment, deploy Azure resources (Microsoft Foundry, Azure AI Search, Blob Storage), configure environment variables, and prepare sample insurance documents for processing
 - **Challenge 01**: **[GenAI Powered Document Processing](challenge-1/README.md)**: Build a comprehensive document processing pipeline using GPT-4o and Mistral AI for multimodal processing, implement Azure AI Search with vector embeddings for semantic retrieval, and create hybrid search capabilities across insurance policies and claims
-- **Challenge 02**: **[Creating Your AI Document Agent](challenge-2/README.md)**: Build an intelligent AI agent using Microsoft Agent Framework and Azure AI Foundry that orchestrates claims processing workflows, implements function calling for OCR and document parsing, validates claim information against policies, and generates structured JSON claim reports with confidence scores
-- **Challenge 03**: **[CI/CD with GitHub Actions](challenge-3/README.md)**: *Coming Soon* - Implement automated testing and deployment pipelines for your AI agent, set up continuous integration for code quality checks, and create automated deployment workflows to Azure
+- **Challenge 02**: **[Creating Your AI Document Agent](challenge-2/README.md)**: Build an intelligent AI agent using Microsoft Agent Framework and Microsoft Foundry that orchestrates claims processing workflows, implements function calling for OCR and document parsing, validates claim information against policies, and generates structured JSON claim reports with confidence scores
+- **Challenge 03**: **[Observability and Monitoring for AI Agents](challenge-3/README.md)**: Implement comprehensive observability and monitoring for your Claims Processing Agent using Microsoft Foundry's observability capabilities, set up OpenTelemetry-based tracing, configure continuous evaluation for quality and safety metrics, integrate Application Insights for centralized telemetry, and establish proactive alerting for production AI systems
 - **Challenge 04**: **[Agent Deployment](challenge-4/README.md)**: *Coming Soon* - Deploy your AI agent to production in Azure with comprehensive monitoring, implement scaling strategies, and establish observability for production-ready systems
 
 

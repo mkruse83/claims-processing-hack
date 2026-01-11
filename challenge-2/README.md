@@ -23,7 +23,7 @@ If you've worked with Azure OpenAI or other LLM APIs before, you're likely famil
 In the early days of GPT-3.5 and GPT-4, developers would define functions with JSON schemas, pass them to the chat completion API, and handle the function execution loop manually. The model would return a `function_call` object, you'd execute the function, return the results, and continue the conversation. This gave models the ability to use calculators, search databases, call APIs, or retrieve real-time information.
 
 **The Evolution to Agents:**
-Modern AI agents, like those built with Microsoft Agent Framework and Azure AI Foundry, take this concept to the next level. Instead of manually orchestrating the function calling loop, agents **autonomously manage tool execution** within their workflow. You define tools (functions) once, and the agent decides when to use them, chains multiple tool calls together, handles errors, and iterates until it completes the task.
+Modern AI agents, like those built with Microsoft Agent Framework and Microsoft Foundry, take this concept to the next level. Instead of manually orchestrating the function calling loop, agents **autonomously manage tool execution** within their workflow. You define tools (functions) once, and the agent decides when to use them, chains multiple tool calls together, handles errors, and iterates until it completes the task.
 
 **Why This Matters for Claims Processing:**
 In our insurance claims scenario, an agent can seamlessly orchestrate multiple tools—extracting text from damage photos via OCR, parsing policy documents for coverage terms, validating claim amounts against policy limits, and generating structured outputs—all without you manually managing each step. The agent reasons about which tools to use, in what order, and how to combine their results to produce accurate claim assessments. This makes building complex, multi-step workflows dramatically simpler and more robust.
@@ -34,7 +34,7 @@ In our insurance claims scenario, an agent can seamlessly orchestrate multiple t
 
 ### What is the Claims Processing Agent?
 
-The Claims Processing Agent is an intelligent AI assistant built using Microsoft Agent Framework and Azure AI Foundry. Think of it as an experienced claims adjuster that can automatically review insurance claims, validate coverage, check policy terms, and provide recommendations—all without human intervention for routine cases.
+The Claims Processing Agent is an intelligent AI assistant built using Microsoft Agent Framework and Microsoft Foundry. Think of it as an experienced claims adjuster that can automatically review insurance claims, validate coverage, check policy terms, and provide recommendations—all without human intervention for routine cases.
 
 Instead of requiring manual review of every document and calculation, the agent autonomously orchestrates the entire claims assessment process, making intelligent decisions about what information to gather and how to analyze it.
 
