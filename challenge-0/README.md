@@ -45,21 +45,15 @@ Now, time to deploy our resources to Azure!
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fazure-trust-agents%2Fmain%2Fchallenge-0%2Finfra%2Fazuredeploy.json)
 
-**Deployment Parameters:**
-- servicePrincipalObjectId: Leave this field empty.
-- resource group: Introduce the unique name for your resource group (example: rg-user01-yourinitials).
-
 **NOTE:** Some parts of your deployment may fail if the resource provider `Microsoft.AlertsManagement` is not registered in your subscription. Follow the [documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types#register-resource-provider-1) to register it and the re-run the deployment.
 
 Resource deployment can take up to 10 minutes, afterwards you'll be able to find all the Azure resources you need in your resource group.
+</details>
 
 ## 1.4 Verify the creation of your resources
 
-Go back to your `Azure Portal` and find your `Resource Group`that should by now contain some resources and look like this:
+Go to your [`Azure Portal`](https://portal.azure.com/) and find your `Resource Group`that should by now contain 10 Azure resources.
 
-![alt text](image.png)
-
-</details>
 
 ## 1.5 Let's retrieve the necessary keys
 After deploying resources, configure environment variables in the `.env` file. Ensure you're logged into Azure CLI, then run the get-keys script to automatically populate the required values.
