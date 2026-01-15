@@ -32,6 +32,46 @@ In our insurance claims scenario, an agent can seamlessly orchestrate multiple t
 
 ## Tasks
 
+### Task 1: Run the OCR Agent
+
+The OCR Agent uses Mistral Document AI to extract text from claim images.
+
+```bash
+cd challenge-2/agents
+
+# Run the OCR agent on a sample claim image
+python ocr_agent.py ../../challenge-0/data/statements/crash1_front.jpeg
+```
+
+**What it does:**
+- Encodes the image to base64
+- Sends it to Mistral Document AI via Azure AI Foundry
+- Extracts all text from the document/image
+- Returns structured JSON with the extracted text
+
+**Expected output:** JSON containing the extracted text from the claim statement, saved to the `ocr_results/` folder.
+
+### Task 2: Run the JSON Structuring Agent
+
+The JSON Structuring Agent converts raw OCR text into structured claim data using GPT-4.1-mini.
+
+```bash
+cd challenge-2/agents
+
+# Run the JSON structuring agent on the OCR output from Task 1
+python json_structuring_agent.py ../ocr_results/crash1_front_ocr_result.json
+```
+
+**What it does:**
+- Reads the OCR output from Task 1
+- Uses GPT-4.1-mini to parse and structure the text
+- Extracts key claim fields (vehicle info, damage assessment, incident details)
+- Returns well-structured JSON ready for downstream processing
+
+**Expected output:** Structured JSON with fields like vehicle information, damage severity, incident details, and claim assessment.
+
+---
+
 ## Agent Implementation
 
 ### What is the Claims Processing Agent?
@@ -227,6 +267,5 @@ After completing this challenge, you'll be ready for Challenge 3 where we'll dep
 
 ---
 
-**Need Help?** Check the solution examples in `solutions/` folder or ask your hackathon mentors.
 
 Good luck! 🚀
