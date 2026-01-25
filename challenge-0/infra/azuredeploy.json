@@ -189,7 +189,7 @@
       "type": "Microsoft.CognitiveServices/accounts",
       "apiVersion": "2024-10-01",
       "name": "[variables('documentIntelligenceName')]",
-      "location": "westeurope",
+      "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "sku": {
         "name": "S0"
