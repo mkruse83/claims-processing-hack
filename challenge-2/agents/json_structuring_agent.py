@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-OCR Text Extraction Agent - Extracts and structures text from JPEG images.
-Uses GPT-4o-mini to parse OCR results and create structured text data.
-Focuses solely on text extraction - does not analyze visual content like car damage.
+JSON Structuring Agent - Structures pre-extracted OCR text into JSON format.
+Takes output from the OCR agent and converts it into structured JSON data.
+Uses GPT-4o-mini to parse and organize already-extracted text.
 
 Usage:
     python json_structuring_agent.py <ocr_result.json or ocr_text.txt>
@@ -38,15 +38,15 @@ model_deployment_name = os.environ.get("MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 
 def get_agent_instructions() -> str:
     """
-    Generate agent instructions for OCR text extraction from JPEG pictures.
+    Generate agent instructions for structuring pre-extracted OCR text into JSON.
     
     Returns:
-        Agent instruction string for pure OCR extraction
+        Agent instruction string for JSON structuring
     """
-    return """You are an expert OCR text extraction assistant specialized in extracting and structuring text content from JPEG images.
+    return """You are an expert JSON structuring assistant specialized in organizing pre-extracted OCR text into clean, structured JSON format.
 
 **Your Task**:
-Extract all visible text from the provided JPEG image and structure it into a clean, organized JSON format. Focus solely on text extraction - do not analyze or describe any visual elements, objects, or non-text content in the image.
+Take the provided OCR text (which has already been extracted from a document) and structure it into a clean, organized JSON format. You are NOT extracting text from images - the text has already been extracted and provided to you.
 
 **JSON Output Structure**:
 {
@@ -80,37 +80,36 @@ Extract all visible text from the provided JPEG image and structure it into a cl
 }
 
 **Processing Rules**:
-1. Extract ALL visible text from the image - do not skip any text content
+1. Work with the pre-extracted text provided to you - do not attempt to extract text from images
 2. Preserve the original text exactly as it appears (spelling, formatting, punctuation)
 3. Organize text blocks in reading order (top to bottom, left to right)
 4. Identify and categorize structured fields (dates, names, numbers, etc.)
-5. Note any text that is unclear, partially visible, or difficult to read
+5. Note any text that appears unclear or incomplete in the provided OCR output
 6. Use null for structured fields where no relevant text is found
-7. Set confidence level based on text clarity and extraction completeness
-8. Focus ONLY on text - ignore any images, graphics, logos, or visual elements
-9. Return ONLY valid JSON, no additional commentary
+7. Set confidence level based on text clarity and completeness in the OCR output
+8. Return ONLY valid JSON, no additional commentary
 
 **Important**: 
 - Your entire response must be valid JSON that can be parsed
 - Do not include any text before or after the JSON object
-- Do not describe or analyze any pictures, photos, or visual content - extract text only"""
+- You are structuring already-extracted text, not performing OCR yourself"""
 
 
 def structure_ocr_to_json(ocr_text: str, source_file: str = None, project_client=None, agent=None) -> dict:
     """
-    Convert OCR text into structured JSON format using GPT-4o-mini agent.
+    Convert pre-extracted OCR text into structured JSON format using GPT-4o-mini agent.
     
     Args:
-        ocr_text: The raw OCR text to structure
-        source_file: Optional path to the source file for metadata
+        ocr_text: The already-extracted OCR text to structure (from OCR agent output)
+        source_file: Optional path to the original source file for metadata
         project_client: Optional existing AIProjectClient
         agent: Optional existing agent to reuse
         
     Returns:
-        Structured JSON dictionary containing extracted text information
+        Structured JSON dictionary containing organized text information
     """
     try:
-        logger.info(f"Processing OCR text from: {source_file or 'unknown source'}")
+        logger.info(f"Processing pre-extracted OCR text from: {source_file or 'unknown source'}")
         
         # Create client if not provided
         should_close_client = False
@@ -122,34 +121,34 @@ def structure_ocr_to_json(ocr_text: str, source_file: str = None, project_client
             )
             should_close_client = True
         
-        # Get agent instructions for pure OCR text extraction
+        # Get agent instructions for JSON structuring of pre-extracted text
         agent_instructions = get_agent_instructions()
         
         # Create the agent
         agent = project_client.agents.create_version(
-            agent_name="OCRTextExtractionAgent",
+            agent_name="JSONStructuringAgent",
             definition=PromptAgentDefinition(
                 model=model_deployment_name,
                 instructions=agent_instructions,
-                temperature=0.1,  # Low temperature for consistent, factual extraction
+                temperature=0.1,  # Low temperature for consistent, factual structuring
             ),
         )
         
-        logger.info(f"✅ Created OCR Text Extraction Agent: {agent.name} (version {agent.version})")
+        logger.info(f"✅ Created JSON Structuring Agent: {agent.name} (version {agent.version})")
         
         # Get OpenAI client for responses
         openai_client = project_client.get_openai_client()
         
-        # Create user query with OCR text
-        user_query = f"""Please extract and structure all text from the following OCR output into the standardized JSON format.
+        # Create user query with pre-extracted OCR text
+        user_query = f"""Please structure the following pre-extracted OCR text into the standardized JSON format.
 
 ---OCR TEXT START---
 {ocr_text}
 ---OCR TEXT END---
 
-Return only the structured JSON object with all extracted text."""
+Return only the structured JSON object with all organized text fields."""
         
-        logger.info("Sending OCR text to extraction agent...")
+        logger.info("Sending pre-extracted OCR text to structuring agent...")
         
         # Get response from agent
         response = openai_client.responses.create(
@@ -179,7 +178,7 @@ Return only the structured JSON object with all extracted text."""
             "original_text_length": len(ocr_text)
         }
         
-        logger.info("✓ Successfully extracted and structured OCR text into JSON")
+        logger.info("✓ Successfully structured pre-extracted OCR text into JSON")
         return structured_data
         
     except json.JSONDecodeError as e:
@@ -288,12 +287,12 @@ def main():
         )
         
         with project_client:
-            # Generate agent instructions for OCR text extraction
+            # Generate agent instructions for JSON structuring
             agent_instructions = get_agent_instructions()
             
             # Create the agent
             agent = project_client.agents.create_version(
-                agent_name="OCRTextExtractionAgent",
+                agent_name="JSONStructuringAgent",
                 definition=PromptAgentDefinition(
                     model=model_deployment_name,
                     instructions=agent_instructions,
@@ -301,7 +300,7 @@ def main():
                 ),
             )
             
-            print(f"✅ Created OCR Text Extraction Agent: {agent.name} (version {agent.version})")
+            print(f"✅ Created JSON Structuring Agent: {agent.name} (version {agent.version})")
             print(f"   Agent visible in Foundry portal\n")
             
             # Read input file
@@ -338,15 +337,15 @@ def main():
             openai_client = project_client.get_openai_client()
             
             # Create user query
-            user_query = f"""Please extract and structure all text from the following OCR output into the standardized JSON format.
+            user_query = f"""Please structure the following pre-extracted OCR text into the standardized JSON format.
 
 ---OCR TEXT START---
 {ocr_text}
 ---OCR TEXT END---
 
-Return only the structured JSON object with all extracted text."""
+Return only the structured JSON object with all organized text fields."""
             
-            print("🤖 Sending to agent for text extraction...")
+            print("🤖 Sending to agent for JSON structuring...")
             
             # Get response from agent
             response = openai_client.responses.create(
