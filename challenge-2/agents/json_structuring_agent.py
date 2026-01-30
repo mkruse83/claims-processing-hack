@@ -76,7 +76,7 @@ Take the provided OCR text (which has already been extracted from a document) an
     "issues": ["List any text that was unclear or partially readable"]
   },
   "confidence": "high | medium | low",
-  "extraction_notes": "Notes about the extraction quality or any ambiguities"
+  "extraction_notes": "Notes about the text quality or any ambiguities in the provided OCR output"
 }
 
 **Processing Rules**:
