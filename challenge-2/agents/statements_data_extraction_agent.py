@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-OCR Text Extraction Agent - Extracts and structures text from JPEG images.
-Uses GPT-4o-mini to parse OCR results and create structured text data.
-Focuses solely on text extraction - does not analyze visual content like car damage.
+Statements Data Extraction Agent - Extracts structured data from insurance claim statement text.
+Takes output from the OCR agent and converts it into structured JSON data.
+Uses GPT-4o-mini to parse and organize text into insurance claim fields.
 
 Usage:
-    python json_structuring_agent.py <ocr_result.json or ocr_text.txt>
+    python statements_data_extraction_agent.py <ocr_result.json or ocr_text.txt>
     
 Example with OCR JSON output:
-    python json_structuring_agent.py ../ocr_results/document_ocr_result.json
+    python statements_data_extraction_agent.py ../ocr_results/document_ocr_result.json
     
 """
 import os
@@ -38,62 +38,91 @@ model_deployment_name = os.environ.get("MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 
 def get_agent_instructions() -> str:
     """
-    Generate agent instructions for OCR text extraction from JPEG pictures.
+    Generate agent instructions for extracting insurance claim statement data.
     
     Returns:
-        Agent instruction string for pure OCR extraction
+        Agent instruction string for statement data extraction
     """
-    return """You are an expert OCR text extraction assistant specialized in extracting and structuring text content from JPEG images.
+    return """You are an expert at extracting structured data from insurance claim statement text.
 
 **Your Task**:
-Extract all visible text from the provided JPEG image and structure it into a clean, organized JSON format. Focus solely on text extraction - do not analyze or describe any visual elements, objects, or non-text content in the image.
+Parse the provided text and extract information into the structured JSON format below.
 
 **JSON Output Structure**:
 {
-  "document_type": "form | letter | receipt | invoice | certificate | report | handwritten | mixed | other",
-  "extracted_text": {
-    "raw_text": "Complete extracted text preserving original layout where possible",
-    "text_blocks": [
-      {
-        "block_id": 1,
-        "content": "Text content of this block",
-        "text_type": "printed | handwritten | mixed"
-      }
-    ],
-    "structured_fields": {
-      "titles": ["Any document titles or headers"],
-      "dates": ["Extracted dates in original format"],
-      "names": ["Person or organization names found"],
-      "addresses": ["Any addresses found"],
-      "phone_numbers": ["Phone numbers found"],
-      "email_addresses": ["Email addresses found"],
-      "reference_numbers": ["Document numbers, IDs, or reference codes"],
-      "amounts": ["Monetary amounts or numeric values with context"]
-    }
+  "document_type": "statement_front | statement_back",
+  "extracted_text": "Complete raw text from the document",
+  "policyholder_information": {
+    "name": "Policy holder name",
+    "address": "Full address",
+    "phone": "Phone number",
+    "email": "Email address",
+    "policy_number": "Policy number",
+    "claimant_id": "Claimant ID if present"
   },
-  "text_quality": {
-    "overall_legibility": "high | medium | low",
-    "issues": ["List any text that was unclear or partially readable"]
+  "vehicle_information": {
+    "year": "Vehicle year",
+    "make": "Vehicle make/manufacturer",
+    "model": "Vehicle model",
+    "color": "Vehicle color",
+    "vin": "VIN number",
+    "license_plate": "License plate number"
+  },
+  "accident_information": {
+    "date_of_incident": "Date in YYYY-MM-DD format if possible",
+    "time": "Time of incident",
+    "location": "Location/address of incident",
+    "is_us_territory": true | false | null
+  },
+  "description_of_incident": {
+    "description": "Full incident description text",
+    "is_date_match": true | false | null,
+    "is_location_match": true | false | null,
+    "has_witness": true | false,
+    "is_own_fault": true | false | null,
+    "is_third_party_fault": true | false | null,
+    "vehicle_was_moving": true | false | null
+  },
+  "description_of_damages": [
+    {
+      "part_name": "Name of damaged part",
+      "damage_description": "Description of damage",
+      "severity": "minor | moderate | severe",
+      "repair_or_replace": "repair | replace | unsure"
+    }
+  ],
+  "witness_information": {
+    "name": "Witness name",
+    "phone": "Witness phone",
+    "is_matching": true | false | null
+  },
+  "police_report": {
+    "report_number": "Police report number",
+    "police_department": "Police department name"
+  },
+  "signature": {
+    "is_present": true | false,
+    "printed_name": "Printed name on signature",
+    "date": "Signature date",
+    "is_date_within_a_week": true | false | null,
+    "is_name_matching": true | false | null
   },
   "confidence": "high | medium | low",
-  "extraction_notes": "Notes about the extraction quality or any ambiguities"
+  "notes": "Any additional notes or observations"
 }
 
 **Processing Rules**:
-1. Extract ALL visible text from the image - do not skip any text content
-2. Preserve the original text exactly as it appears (spelling, formatting, punctuation)
-3. Organize text blocks in reading order (top to bottom, left to right)
-4. Identify and categorize structured fields (dates, names, numbers, etc.)
-5. Note any text that is unclear, partially visible, or difficult to read
-6. Use null for structured fields where no relevant text is found
-7. Set confidence level based on text clarity and extraction completeness
-8. Focus ONLY on text - ignore any images, graphics, logos, or visual elements
-9. Return ONLY valid JSON, no additional commentary
+1. Extract all available information from the text
+2. Use null for fields where information is not present or unclear
+3. For boolean fields, use true/false if determinable, null if unclear
+4. Preserve original text formatting in the "extracted_text" field
+5. Be as accurate as possible with data extraction
+6. Set confidence based on text clarity and completeness
+7. Return ONLY valid JSON, no additional commentary
 
 **Important**: 
 - Your entire response must be valid JSON that can be parsed
-- Do not include any text before or after the JSON object
-- Do not describe or analyze any pictures, photos, or visual content - extract text only"""
+- Do not include any text before or after the JSON object"""
 
 
 def structure_ocr_to_json(ocr_text: str, source_file: str = None, project_client=None, agent=None) -> dict:
@@ -101,16 +130,16 @@ def structure_ocr_to_json(ocr_text: str, source_file: str = None, project_client
     Convert OCR text into structured JSON format using GPT-4o-mini agent.
     
     Args:
-        ocr_text: The raw OCR text to structure
+        ocr_text: The text to structure
         source_file: Optional path to the source file for metadata
         project_client: Optional existing AIProjectClient
         agent: Optional existing agent to reuse
         
     Returns:
-        Structured JSON dictionary containing extracted text information
+        Structured JSON dictionary containing extracted claim information
     """
     try:
-        logger.info(f"Processing OCR text from: {source_file or 'unknown source'}")
+        logger.info(f"Processing text from: {source_file or 'unknown source'}")
         
         # Create client if not provided
         should_close_client = False
@@ -122,34 +151,34 @@ def structure_ocr_to_json(ocr_text: str, source_file: str = None, project_client
             )
             should_close_client = True
         
-        # Get agent instructions for pure OCR text extraction
+        # Get agent instructions
         agent_instructions = get_agent_instructions()
         
         # Create the agent
         agent = project_client.agents.create_version(
-            agent_name="OCRTextExtractionAgent",
+            agent_name="StatementsDataExtractionAgent",
             definition=PromptAgentDefinition(
                 model=model_deployment_name,
                 instructions=agent_instructions,
-                temperature=0.1,  # Low temperature for consistent, factual extraction
+                temperature=0.1,  # Low temperature for consistent, factual structuring
             ),
         )
         
-        logger.info(f"✅ Created OCR Text Extraction Agent: {agent.name} (version {agent.version})")
+        logger.info(f"✅ Created Statements Data Extraction Agent: {agent.name} (version {agent.version})")
         
         # Get OpenAI client for responses
         openai_client = project_client.get_openai_client()
         
-        # Create user query with OCR text
-        user_query = f"""Please extract and structure all text from the following OCR output into the standardized JSON format.
+        # Create user query
+        user_query = f"""Please extract and structure the following text into the standardized JSON format.
 
----OCR TEXT START---
+---TEXT START---
 {ocr_text}
----OCR TEXT END---
+---TEXT END---
 
-Return only the structured JSON object with all extracted text."""
+Return only the structured JSON object."""
         
-        logger.info("Sending OCR text to extraction agent...")
+        logger.info("Sending text to agent...")
         
         # Get response from agent
         response = openai_client.responses.create(
@@ -179,7 +208,7 @@ Return only the structured JSON object with all extracted text."""
             "original_text_length": len(ocr_text)
         }
         
-        logger.info("✓ Successfully extracted and structured OCR text into JSON")
+        logger.info("✓ Successfully structured text into JSON")
         return structured_data
         
     except json.JSONDecodeError as e:
@@ -259,18 +288,18 @@ def process_ocr_result(ocr_result_json: str) -> dict:
 
 
 def main():
-    """Main function to create and test the JSON Structuring Agent."""
+    """Main function to create and test the Statements Data Extraction Agent."""
     
-    print("=== JSON Structuring Agent with GPT-4o-mini ===\n")
+    print("=== Statements Data Extraction Agent with GPT-4o-mini ===\n")
     
     try:
         # Get input from CLI args
         if len(sys.argv) < 2:
-            print("Usage: python json_structuring_agent.py <ocr_text_file_or_json>")
+            print("Usage: python statements_data_extraction_agent.py <ocr_text_file_or_json>")
             print("\nExample with OCR JSON result:")
-            print("  python json_structuring_agent.py ocr_result.json")
+            print("  python statements_data_extraction_agent.py ocr_result.json")
             print("\nExample with raw text file:")
-            print("  python json_structuring_agent.py extracted_text.txt")
+            print("  python statements_data_extraction_agent.py extracted_text.txt")
             return
         
         input_file = sys.argv[1]
@@ -288,12 +317,12 @@ def main():
         )
         
         with project_client:
-            # Generate agent instructions for OCR text extraction
+            # Generate agent instructions
             agent_instructions = get_agent_instructions()
             
             # Create the agent
             agent = project_client.agents.create_version(
-                agent_name="OCRTextExtractionAgent",
+                agent_name="StatementsDataExtractionAgent",
                 definition=PromptAgentDefinition(
                     model=model_deployment_name,
                     instructions=agent_instructions,
@@ -301,7 +330,7 @@ def main():
                 ),
             )
             
-            print(f"✅ Created OCR Text Extraction Agent: {agent.name} (version {agent.version})")
+            print(f"✅ Created Statements Data Extraction Agent: {agent.name} (version {agent.version})")
             print(f"   Agent visible in Foundry portal\n")
             
             # Read input file
@@ -338,15 +367,15 @@ def main():
             openai_client = project_client.get_openai_client()
             
             # Create user query
-            user_query = f"""Please extract and structure all text from the following OCR output into the standardized JSON format.
+            user_query = f"""Please extract and structure the following text into the standardized JSON format.
 
----OCR TEXT START---
+---TEXT START---
 {ocr_text}
----OCR TEXT END---
+---TEXT END---
 
-Return only the structured JSON object with all extracted text."""
+Return only the structured JSON object."""
             
-            print("🤖 Sending to agent for text extraction...")
+            print("🤖 Sending to agent for data extraction...")
             
             # Get response from agent
             response = openai_client.responses.create(
@@ -389,15 +418,14 @@ Return only the structured JSON object with all extracted text."""
                 # Summary
                 print(f"\n📊 Summary:")
                 print(f"   Document type: {result.get('document_type', 'unknown')}")
-                print(f"   Vehicle side: {result.get('vehicle_side', 'unspecified')}")
                 print(f"   Confidence: {result.get('confidence', 'unknown')}")
                 
-                if result.get('extracted_data', {}).get('policy_holder', {}).get('name'):
-                    print(f"   Policy holder: {result['extracted_data']['policy_holder']['name']}")
-                if result.get('extracted_data', {}).get('damages', {}).get('estimated_amount'):
-                    print(f"   Estimated amount: ${result['extracted_data']['damages']['estimated_amount']}")
+                if result.get('policyholder_information', {}).get('name'):
+                    print(f"   Policy holder: {result['policyholder_information']['name']}")
+                if result.get('accident_information', {}).get('date_of_incident'):
+                    print(f"   Incident date: {result['accident_information']['date_of_incident']}")
                 
-                print("\n✓ JSON Structuring Agent completed successfully!")
+                print("\n✓ Statements Data Extraction Agent completed successfully!")
                 
             except json.JSONDecodeError as e:
                 print(f"\n❌ Failed to parse agent response as JSON: {e}")
