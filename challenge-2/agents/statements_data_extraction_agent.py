@@ -90,7 +90,7 @@ Parse the provided text and extract information into the structured JSON format 
       "part_name": "Name of damaged part",
       "damage_description": "Description of damage",
       "severity": "minor | moderate | severe",
-      "repair_or_replace": "repair | replace | unsure"
+      "repair_or_replace": "repair | replace | unsure" // estimation if the part should be repaired or replaced
     }
   ],
   "witness_information": {
