@@ -1,0 +1,96 @@
+{
+  "document_type": "statement_front",
+  "extracted_text": "# ACCIDENT STATEMENT FORM\n\n## Policyholder Information\n\nName: John Peterson\nAddress: 1142 Pinecrest Avenue, Springfield, OH 45503\nPhone: (937) 555-2319\nEmail: john.peterson@email.com\nPolicy Number: LIAB-AUTO-001\nClaimant ID:\n\n## Vehicle Information\n\nYear/Make/Model: 2004 Honda Accord\nColor: Silver\nVIN: 1HGCH56404A123456\nLicense Plate: OH-GHR1984\n\n## Accident Information\n\nDate of Incident: July 17, 2025\nTime: 8:30 AM\nLocation: Parking Lot, 2325 Main Street, Springfield, OH 45503\n\n## Description of Incident\n\nOn the morning of July 17, 2025, my vehicle was legally parked in a market parking space at 2325 Main Street, Springfield. At approximately 8:30 AM, while I was inside a nearby store, I was notified by a witness that a gray pickup truck attempting to park beside my car, struck the front end and driver's side of my vehicle. The other car's driver failed to properly judge the distance and collided with my vehicle, causing significant damage. The other driver left their information and waited for the police to arrive.",
+  "policyholder_information": {
+    "name": "John Peterson",
+    "address": "1142 Pinecrest Avenue, Springfield, OH 45503",
+    "phone": "(937) 555-2319",
+    "email": "john.peterson@email.com",
+    "policy_number": "LIAB-AUTO-001",
+    "claimant_id": null
+  },
+  "vehicle_information": {
+    "year": "2004",
+    "make": "Honda",
+    "model": "Accord",
+    "color": "Silver",
+    "vin": "1HGCH56404A123456",
+    "license_plate": "OH-GHR1984"
+  },
+  "accident_information": {
+    "date_of_incident": "2025-07-17",
+    "time": "8:30 AM",
+    "location": "Parking Lot, 2325 Main Street, Springfield, OH 45503",
+    "is_us_territory": true
+  },
+  "description_of_incident": {
+    "description": "On the morning of July 17, 2025, my vehicle was legally parked in a market parking space at 2325 Main Street, Springfield. At approximately 8:30 AM, while I was inside a nearby store, I was notified by a witness that a gray pickup truck attempting to park beside my car, struck the front end and driver's side of my vehicle. The other car's driver failed to properly judge the distance and collided with my vehicle, causing significant damage. The other driver left their information and waited for the police to arrive.",
+    "is_date_match": true,
+    "is_location_match": true,
+    "has_witness": true,
+    "is_own_fault": false,
+    "is_third_party_fault": true,
+    "vehicle_was_moving": false
+  },
+  "description_of_damages": [],
+  "witness_information": {
+    "name": null,
+    "phone": null,
+    "is_matching": null
+  },
+  "police_report": {
+    "report_number": null,
+    "police_department": null
+  },
+  "signature": {
+    "is_present": false,
+    "printed_name": null,
+    "date": null,
+    "is_date_within_a_week": null,
+    "is_name_matching": null
+  },
+  "confidence": "high",
+  "notes": "No claimant ID, witness name or contact, police report number, or signature present. Damage details not specified.",
+  "metadata": {
+    "source_file": "../../challenge-0/data/statements/crash1_front.jpeg",
+    "processing_timestamp": "2026-02-01T15:21:47.583488",
+    "agent_model": "gpt-4.1-mini",
+    "original_text_length": 1032,
+    "policy_evaluation_agent": {
+      "name": "PolicyEvaluationAgent",
+      "version": "1",
+      "ai_search_index_asset_id": "insurance-documents-index/versions/1"
+    }
+  },
+  "policy_evaluation": {
+    "matched_policy": {
+      "id": "LIAB-AUTO-001",
+      "title": "Liability Only Auto Insurance Policy",
+      "score": 0.95,
+      "summary": "This policy provides liability coverage for damages and injuries you cause to others but does not cover damage to your own vehicle or injuries to yourself. It includes bodily injury and property damage liability with state minimum limits.",
+      "raw_document_reference": "liability_only_policy.md"
+    },
+    "coverage_assessment": {
+      "coverage_applicability": "not_covered",
+      "estimated_company_liability_amount": 0,
+      "deductible_applicable": false,
+      "deductible_amount": 0,
+      "limits_may_be_exceeded": false,
+      "relevant_policy_sections": "Section 1 Coverage Overview and Section 4 What's NOT Covered specify that damage to the policyholder's own vehicle is not covered under this liability-only policy."
+    },
+    "liability_assessment": {
+      "at_fault_party": "third_party",
+      "estimated_fault_split": {
+        "policyholder_percent": 0,
+        "third_party_percent": 100
+      },
+      "key_factors": "The policyholder's vehicle was legally parked and stationary; the third party driver misjudged distance and struck the policyholder's vehicle, causing damage. The third party admitted fault and waited for police."
+    },
+    "claim_validity": {
+      "is_claim_valid": true,
+      "primary_reasons": "The claim is valid as the third party is at fault and the incident is well described with witness confirmation and third party cooperation. However, the policyholder's own policy does not cover vehicle damage.",
+      "confidence": "high"
+    },
+    "notes": "The policyholder holds a liability-only policy which excludes coverage for damage to their own vehicle. The third party is liable for the damage, so the policyholder should pursue a claim against the third party's insurance. Lack of police report and witness contact details may complicate third party claim but does not invalidate the claim itself."
+  }
+}

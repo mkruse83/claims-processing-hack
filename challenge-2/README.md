@@ -3,7 +3,7 @@
 **Expected Duration:** 60 minutes
 
 ## Overview
-In this challenge, you'll explore different mechanisms for extracting text from pictures and processing that text with LLMs to extract structured information. You'll work with two specialized AI agents that handle document processing for insurance claims: first extracting raw text from images using OCR, then using an LLM to parse and structure that text into standardized claim data ready for downstream processing.
+In this challenge, you'll explore different mechanisms for extracting text from pictures and processing that text with LLMs to extract structured information. You'll work with specialized AI agents that handle document processing for insurance claims: first extracting raw text from images using OCR, then using an LLM to parse and structure that text into standardized claim data, and finally using another agent to evaluate policy coverage and liability using Azure AI Search as a knowledge source.
 
 ## The Evolution of Functions: From Traditional Systems to AI Agents
 
@@ -74,9 +74,34 @@ python statements_data_extraction_agent.py ../ocr_results/crash1_front_ocr_resul
 
 ---
 
+### Task 3: Run the Policy Evaluation Agent
+
+The Policy Evaluation Agent uses Azure AI Foundry Agents with Azure AI Search as a knowledge source to match the structured claim against policy documents and estimate coverage and liability.
+
+```bash
+cd challenge-2/agents
+
+# Run the policy evaluation agent on the structured claim output from Task 2
+python policy_evaluation_agent.py ../ocr_results/crash1_front_ocr_result_structured.json
+```
+
+**What it does:**
+- Reads the structured claim JSON produced by `statements_data_extraction_agent.py`
+- Ensures an Azure AI Search index asset exists in your Azure AI Project (using `AZURE_AI_CONNECTION_ID` and `AI_SEARCH_INDEX_NAME` to create an `AzureAISearchIndex` if needed)
+- Attaches that index as a knowledge source to an Azure AI agent using `AzureAISearchAgentTool`
+- Uses the index content (policy markdown files you ingested in Challenge 1) to:
+  - Find the best matching policy
+  - Assess coverage and limits
+  - Estimate liability and claim validity
+- Appends a `policy_evaluation` object to the claim JSON and writes `*_with_policy_evaluation.json`
+
+**Expected output:** Enriched JSON with a `policy_evaluation` field that includes matched policy information, coverage assessment, liability assessment, claim validity, and notes, along with metadata that records which Azure AI Search index asset was used.
+
+---
+
 ## Agent Implementation
 
-This challenge includes two specialized agents that work together in a document processing pipeline:
+This challenge includes three specialized agents that work together in a document processing pipeline:
 
 ### 1. OCR Agent (`ocr_agent.py`)
 
@@ -179,6 +204,35 @@ The Statements Data Extraction Agent takes raw OCR text and converts it into a s
 
 ---
 
+### 3. Policy Evaluation Agent (`policy_evaluation_agent.py`)
+
+The Policy Evaluation Agent takes the structured claim JSON and uses Azure AI Search (via an index asset in your Azure AI Project) to ground its reasoning in real policy documents before estimating coverage and liability.
+
+**Technology Stack:**
+- **Model**: GPT-4.1-mini via Azure AI Foundry
+- **SDK**: Azure AI Projects SDK with `PromptAgentDefinition` and `AzureAISearchAgentTool`
+- **Search**: Azure AI Search index created in Challenge 1, attached as an `AzureAISearchIndex` asset
+- **Input**: Structured claim JSON from the Statements Data Extraction Agent
+- **Output**: Original claim JSON plus a `policy_evaluation` object
+
+**How It Works:**
+
+1. **Index Asset Management**: Uses `AZURE_AI_CONNECTION_ID` and `AI_SEARCH_INDEX_NAME` to create or reuse an `AzureAISearchIndex` asset in the Azure AI Project (via `project_client.indexes.create_or_update`), so you don't have to manually register the index asset.
+2. **Knowledge-Enhanced Agent**: Configures an agent with `AzureAISearchAgentTool`, pointing it at the search index asset as a knowledge source for policy documents.
+3. **Policy Matching and Evaluation**: The agent queries the index to:
+   - Retrieve the most relevant policy markdown documents
+   - Select the best matching policy for the claim
+   - Assess coverage applicability, deductible, and potential limits
+   - Estimate fault and recommend whether the claim appears valid
+4. **Result Enrichment**: Appends a structured `policy_evaluation` object and metadata (including the search index asset id) to the claim JSON.
+
+**What This Demonstrates:**
+- How to wire Azure AI Search into an Azure AI Foundry agent as a first-class tool
+- How to use `AZURE_AI_CONNECTION_ID` to connect an AI Project to an existing Cognitive Search resource
+- How to programmatically create and reuse an `AzureAISearchIndex` asset so agents can search your policy corpus without additional manual setup
+
+---
+
 ## Pipeline Workflow
 
 The two agents work together in a sequential pipeline:
@@ -199,6 +253,7 @@ The two agents work together in a sequential pipeline:
 **Step 2**: OCR Agent extracts all text and saves to `ocr_results/`
 **Step 3**: Pass the OCR output to the Statements Data Extraction Agent
 **Step 4**: Extraction Agent creates standardized JSON for downstream processing
+**Step 5**: Pass the structured JSON to the Policy Evaluation Agent, which uses Azure AI Search to ground policy decisions and write an enriched `*_with_policy_evaluation.json` file
 
 ---
 

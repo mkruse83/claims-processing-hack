@@ -7,6 +7,8 @@ Streamlit frontend for the Claims Processing REST API
 import os
 import json
 import base64
+from urllib.parse import urlparse
+
 import httpx
 import streamlit as st
 from dotenv import load_dotenv
@@ -29,6 +31,79 @@ st.markdown(
     .main-header { font-size: 2.5rem; font-weight: bold; color: #1E3A8A; margin-bottom: 1rem; }
     .status-success { background-color: #D1FAE5; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #10B981; }
     .status-error { background-color: #FEE2E2; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #EF4444; }
+
+    /* Policy Evaluation layout */
+    .policy-section {
+        margin-top: 1.25rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid #E5E7EB;
+        background-color: #FFFFFF;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .policy-section-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+    }
+
+    .policy-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.5rem 1.75rem;
+    }
+
+    .policy-item-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6B7280;
+        margin-bottom: 0.1rem;
+    }
+
+    .policy-item-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .policy-summary {
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        color: #4B5563;
+    }
+
+    .claim-valid-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .claim-valid-badge {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+    }
+
+    .claim-valid-badge--yes { color: #059669; }
+    .claim-valid-badge--no { color: #DC2626; }
+
+    .claim-valid-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    .policy-notes {
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        color: #374151;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -37,14 +112,29 @@ st.markdown(
 
 def get_api_url():
     if "api_url" not in st.session_state:
-        api_url = os.environ.get("API_URL")
-        if not api_url:
-            st.error(
-                "API_URL environment variable is not set. Please set API_URL before running the app."
-            )
-            st.stop()
+        api_url = os.environ.get("API_URL", "")
         st.session_state.api_url = api_url
     return st.session_state.api_url
+
+
+def infer_upload_mode(api_url: str) -> str:
+    """Infer upload mode from API URL.
+
+    - APIM gateway (azure-api.net): use raw binary body ("apim-binary")
+    - Container App / direct backend (azurecontainerapps.io or other): multipart
+    """
+
+    try:
+        host = urlparse(api_url).netloc.lower()
+    except Exception:
+        host = ""
+
+    if host.endswith("azure-api.net"):
+        return "apim-binary"
+    # Explicitly treat Container Apps as standard multipart; also default
+    if host.endswith("azurecontainerapps.io"):
+        return "multipart"
+    return "multipart"
 
 
 def check_health(api_url: str) -> dict:
@@ -62,12 +152,12 @@ def process_claim(api_url: str, file_content: bytes, filename: str) -> dict:
     - Direct backend (FastAPI / Container App): expects multipart/form-data
     - APIM with binary-upload policy: expects raw binary body
 
-    Select behavior via API_UPLOAD_MODE env var:
-      - "apim-binary": send raw bytes suitable for APIM policy in challenge-4
-      - any other value / unset: default multipart upload
+    Upload mode is inferred from the API URL hostname:
+      - *.azure-api.net  → "apim-binary" (raw bytes for APIM policy)
+      - *.azurecontainerapps.io or anything else → multipart upload
     """
 
-    upload_mode = os.environ.get("API_UPLOAD_MODE", "multipart").lower()
+    upload_mode = infer_upload_mode(api_url)
 
     try:
         with httpx.Client(timeout=120.0) as client:
@@ -266,6 +356,193 @@ def display_results(data: dict):
             ),
         )
 
+    # Policy Evaluation
+    if "policy_evaluation" in data:
+        st.subheader("📑 Policy Evaluation")
+        pe = data.get("policy_evaluation") or {}
+
+        # Matched Policy
+        mp = pe.get("matched_policy") or {}
+        if mp:
+            score = mp.get("score")
+            if isinstance(score, (int, float)):
+                score_display = f"{score:.2f}"
+            else:
+                score_display = score or "N/A"
+
+            matched_policy_html = f"""
+            <div class="policy-section">
+                <div class="policy-section-title">Matched Policy</div>
+                <div class="policy-grid">
+                    <div>
+                        <div class="policy-item-label">Policy ID</div>
+                        <div class="policy-item-value">{mp.get("id", "N/A")}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Title</div>
+                        <div class="policy-item-value">{mp.get("title", "N/A")}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Match Score</div>
+                        <div class="policy-item-value">{score_display}</div>
+                    </div>
+                </div>
+            """
+
+            summary = mp.get("summary")
+            if summary:
+                matched_policy_html += f'<div class="policy-summary">{summary}</div>'
+
+            raw_ref = mp.get("raw_document_reference")
+            if raw_ref:
+                matched_policy_html += (
+                    '<div class="policy-summary">'
+                    '<span class="policy-item-label">Policy Document</span><br />'
+                    f"{raw_ref}</div>"
+                )
+
+            matched_policy_html += "</div>"
+            st.markdown(matched_policy_html, unsafe_allow_html=True)
+
+        # Coverage Assessment
+        ca = pe.get("coverage_assessment") or {}
+        if ca:
+            applicability_raw = (ca.get("coverage_applicability") or "").replace(
+                "_", " "
+            )
+            applicability_label = (
+                applicability_raw.title() if applicability_raw else "Unknown"
+            )
+            coverage_html = f"""
+            <div class="policy-section">
+                <div class="policy-section-title">Coverage Assessment</div>
+                <div class="policy-grid">
+                    <div>
+                        <div class="policy-item-label">Coverage</div>
+                        <div class="policy-item-value">{applicability_label}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Estimated Company Liability</div>
+                        <div class="policy-item-value">${ca.get("estimated_company_liability_amount", 0):,}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Deductible Applies</div>
+                        <div class="policy-item-value">{"Yes" if ca.get("deductible_applicable") else "No"}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Deductible Amount</div>
+                        <div class="policy-item-value">${ca.get("deductible_amount", 0):,}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Limits May Be Exceeded</div>
+                        <div class="policy-item-value">{"Yes" if ca.get("limits_may_be_exceeded") else "No"}</div>
+                    </div>
+                </div>
+            """
+
+            if ca.get("relevant_policy_sections"):
+                coverage_html += (
+                    '<div class="policy-summary">'
+                    '<span class="policy-item-label">Relevant Sections</span><br />'
+                    f"{ca.get('relevant_policy_sections')}</div>"
+                )
+
+            coverage_html += "</div>"
+            st.markdown(coverage_html, unsafe_allow_html=True)
+
+        # Liability Assessment
+        la = pe.get("liability_assessment") or {}
+        if la:
+            at_fault_raw = (la.get("at_fault_party") or "").replace("_", " ")
+            at_fault_label = at_fault_raw.title() if at_fault_raw else "Unknown"
+            split = la.get("estimated_fault_split") or {}
+            key_factors = la.get("key_factors")
+
+            liability_html = f"""
+            <div class="policy-section">
+                <div class="policy-section-title">Liability Assessment</div>
+                <div class="policy-grid">
+                    <div>
+                        <div class="policy-item-label">At-Fault Party</div>
+                        <div class="policy-item-value">{at_fault_label}</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Fault Split</div>
+                        <div class="policy-item-value">Policyholder {split.get("policyholder_percent", 0)}% / Third Party {split.get("third_party_percent", 0)}%</div>
+                    </div>
+                    <div>
+                        <div class="policy-item-label">Key Factors Provided</div>
+                        <div class="policy-item-value">{"Yes" if bool(key_factors) else "No"}</div>
+                    </div>
+                </div>
+            """
+
+            if key_factors:
+                liability_html += (
+                    '<div class="policy-summary">'
+                    '<span class="policy-item-label">Key Factors</span><br />'
+                    f"{key_factors}</div>"
+                )
+
+            liability_html += "</div>"
+            st.markdown(liability_html, unsafe_allow_html=True)
+
+        # Claim Validity
+        cv = pe.get("claim_validity") or {}
+        if cv:
+            is_valid = bool(cv.get("is_claim_valid"))
+            badge_class = (
+                "claim-valid-badge claim-valid-badge--yes"
+                if is_valid
+                else "claim-valid-badge claim-valid-badge--no"
+            )
+            badge_text = "YES" if is_valid else "NO"
+
+            confidence = cv.get("confidence", "N/A")
+            if isinstance(confidence, str):
+                confidence_display = confidence.title()
+            else:
+                confidence_display = confidence
+
+            claim_valid_html = f"""
+            <div class="policy-section">
+                <div class="policy-section-title">Claim Validity</div>
+                <div class="claim-valid-wrapper">
+                    <div class="{badge_class}">{badge_text}</div>
+                    <div class="claim-valid-meta">
+                        <div>
+                            <div class="policy-item-label">Primary Reasons</div>
+                            <div class="policy-item-value">{cv.get("primary_reasons", "N/A")}</div>
+                        </div>
+                        <div>
+                            <div class="policy-item-label">Assessment Confidence</div>
+                            <div class="policy-item-value">{confidence_display}</div>
+                        </div>
+                    </div>
+                </div>
+            """
+
+            notes = pe.get("notes")
+            if notes:
+                claim_valid_html += (
+                    '<div class="policy-notes">'
+                    '<span class="policy-item-label">Policy Evaluation Notes</span><br />'
+                    f"{notes}</div>"
+                )
+
+            claim_valid_html += "</div>"
+            st.markdown(claim_valid_html, unsafe_allow_html=True)
+
+        elif pe.get("notes"):
+            # If there is no structured claim_validity but notes exist, show them in a card
+            notes_html = (
+                '<div class="policy-section">'
+                '<div class="policy-section-title">Policy Evaluation Notes</div>'
+                f'<div class="policy-notes">{pe.get("notes")}</div>'
+                "</div>"
+            )
+            st.markdown(notes_html, unsafe_allow_html=True)
+
 
 def main():
     st.markdown(
@@ -280,7 +557,20 @@ def main():
         api_url = st.text_input("API URL", value=get_api_url())
         st.session_state.api_url = api_url
 
-        if st.button("🏥 Check Health", use_container_width=True):
+        if not api_url:
+            st.warning(
+                "API URL is not set. Set it to enable health checks and claim processing."
+            )
+        else:
+            upload_mode = infer_upload_mode(api_url)
+            mode_label = (
+                "APIM binary upload (raw body via APIM policy)"
+                if upload_mode == "apim-binary"
+                else "Multipart form-data upload (direct backend)"
+            )
+            st.markdown(f"**Upload mode:** {mode_label}")
+
+        if st.button("🏥 Check Health", use_container_width=True, disabled=not api_url):
             with st.spinner("Checking..."):
                 result = check_health(api_url)
                 if result.get("status") == "healthy":
@@ -298,7 +588,7 @@ def main():
             "🚀 Process Claim",
             type="primary",
             use_container_width=True,
-            disabled=not uploaded,
+            disabled=(not uploaded) or (not st.session_state.get("api_url")),
         )
 
     with col2:

@@ -61,6 +61,7 @@ fi
 # Step 5: Deploy Container App
 echo "🚢 Step 5: Deploying Container App..."
 
+
 # Check if app exists
 if az containerapp show --name $APP_NAME --resource-group $RESOURCE_GROUP &>/dev/null; then
     echo "   Updating existing app: $APP_NAME"
@@ -87,7 +88,8 @@ else
             MODEL_DEPLOYMENT_NAME="$MODEL_DEPLOYMENT_NAME" \
             MISTRAL_DOCUMENT_AI_ENDPOINT="$MISTRAL_DOCUMENT_AI_ENDPOINT" \
             MISTRAL_DOCUMENT_AI_KEY="$MISTRAL_DOCUMENT_AI_KEY" \
-            MISTRAL_DOCUMENT_AI_DEPLOYMENT_NAME="$MISTRAL_DOCUMENT_AI_DEPLOYMENT_NAME"
+            MISTRAL_DOCUMENT_AI_DEPLOYMENT_NAME="$MISTRAL_DOCUMENT_AI_DEPLOYMENT_NAME" \
+            AZURE_AI_CONNECTION_ID="$AZURE_AI_CONNECTION_ID"
 fi
 
 # Step 6: Enable managed identity (optional but recommended)

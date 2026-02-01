@@ -25,6 +25,7 @@ else:
     sys.path.append(os.path.join(os.path.dirname(__file__), "challenge-2", "agents"))
 from ocr_agent import extract_text_with_ocr
 from statements_data_extraction_agent import process_ocr_result
+from policy_evaluation_agent import evaluate_policy_and_liability
 
 # Load environment
 load_dotenv(override=True)
@@ -37,14 +38,14 @@ MODEL_DEPLOYMENT_NAME = os.environ.get("MODEL_DEPLOYMENT_NAME")
 
 
 async def process_claim_workflow(image_path: str) -> dict:
-    """
-    Multi-agent workflow that orchestrates OCR and JSON structuring.
+    """Multi-agent workflow that orchestrates OCR, JSON structuring, and
+    policy evaluation.
 
     Args:
         image_path: Path to the claim image file
 
     Returns:
-        Structured claim data as dictionary
+        Structured and policy-enriched claim data as dictionary
     """
     logger.info(f"🔄 Starting claims processing workflow for: {image_path}")
 
@@ -96,7 +97,24 @@ async def process_claim_workflow(image_path: str) -> dict:
     logger.info(
         "✅ Successfully processed OCR output with Statements Data Extraction Agent"
     )
-    return structured_data
+
+    # Step 3: Policy Evaluation Agent - Attach policy coverage and liability assessment
+    logger.info(
+        "📑 Step 3: Policy Evaluation Agent - Evaluating policy coverage and liability..."
+    )
+
+    try:
+        enriched_claim = evaluate_policy_and_liability(structured_data)
+    except Exception as exc:  # pragma: no cover - network/SDK errors
+        logger.error("Policy evaluation failed: %s", exc)
+        return {
+            "error": "Policy evaluation failed",
+            "details": str(exc),
+            "partial_result": structured_data,
+        }
+
+    logger.info("✅ Successfully evaluated policy and liability")
+    return enriched_claim
 
 
 async def main():
