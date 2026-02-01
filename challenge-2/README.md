@@ -3,7 +3,7 @@
 **Expected Duration:** 60 minutes
 
 ## Overview
-In this challenge, you'll work with two specialized AI agents that handle document processing for insurance claims. These agents work together to extract text from claim documents and convert that raw text into structured data ready for downstream processing.
+In this challenge, you'll explore different mechanisms for extracting text from pictures and processing that text with LLMs to extract structured information. You'll work with two specialized AI agents that handle document processing for insurance claims: first extracting raw text from images using OCR, then using an LLM to parse and structure that text into standardized claim data ready for downstream processing.
 
 ## The Evolution of Functions: From Traditional Systems to AI Agents
 
@@ -53,24 +53,24 @@ python ocr_agent.py ../../challenge-0/data/statements/crash1_front.jpeg
 
 **Expected output:** JSON containing the extracted text from the claim statement, saved to the `ocr_results/` folder.
 
-### Task 2: Run the JSON Structuring Agent
+### Task 2: Run the Statements Data Extraction Agent
 
-The JSON Structuring Agent converts raw OCR text into structured claim data using GPT-4.1-mini.
+The Statements Data Extraction Agent converts raw OCR text into structured insurance claim data using GPT-4.1-mini.
 
 ```bash
 cd challenge-2/agents
 
-# Run the JSON structuring agent on the OCR output from Task 1
-python json_structuring_agent.py ../ocr_results/crash1_front_ocr_result.json
+# Run the statements data extraction agent on the OCR output from Task 1
+python statements_data_extraction_agent.py ../ocr_results/crash1_front_ocr_result.json
 ```
 
 **What it does:**
 - Reads the OCR output from Task 1
 - Uses GPT-4.1-mini to parse and structure the text
-- Extracts key claim fields (vehicle info, damage assessment, incident details)
+- Extracts key claim fields (policyholder info, vehicle info, accident details, damages, signatures, etc.)
 - Returns well-structured JSON ready for downstream processing
 
-**Expected output:** Structured JSON with fields like vehicle information, damage severity, incident details, and claim assessment.
+**Expected output:** Structured JSON with fields like policyholder information, vehicle information, accident information, damage descriptions, witness information, police report details, and signature verification.
 
 ---
 
@@ -112,9 +112,9 @@ The OCR Agent is responsible for extracting raw text from images and documents u
 
 ---
 
-### 2. JSON Structuring Agent (`json_structuring_agent.py`)
+### 2. Statements Data Extraction Agent (`statements_data_extraction_agent.py`)
 
-The JSON Structuring Agent takes raw OCR text and converts it into a standardized, structured JSON format suitable for claims processing.
+The Statements Data Extraction Agent takes raw OCR text and converts it into a standardized, structured JSON format suitable for insurance claims processing.
 
 **Technology Stack:**
 - **Model**: GPT-4.1-mini via Azure AI Foundry
@@ -126,37 +126,54 @@ The JSON Structuring Agent takes raw OCR text and converts it into a standardize
 
 1. **Input Processing**: Reads the OCR output from the previous step and extracts the raw text content
 
-2. **Vehicle Side Detection**: Automatically detects if the image shows the front or back of a vehicle to apply appropriate extraction rules
+2. **Document Type Detection**: Automatically detects if the text is from a statement front or back page
 
 3. **Intelligent Structuring**: Uses GPT-4.1-mini with specialized prompts to extract and categorize information into predefined fields:
-   - Vehicle information (make, model, year, VIN)
-   - Damage assessment (severity, affected areas)
-   - Incident details (date, location, description)
-   - Side-specific damage (front bumper, headlights, rear bumper, taillights, etc.)
+   - Policyholder information (name, address, phone, email, policy number)
+   - Vehicle information (year, make, model, color, VIN, license plate)
+   - Accident information (date, time, location, US territory)
+   - Description of incident (with validation flags)
+   - Description of damages (parts, severity, repair vs replace)
+   - Witness information (with matching validation)
+   - Police report details
+   - Signature verification
 
 4. **Validation**: Ensures all required fields are populated and formats are consistent
 
 **Example Output:**
 ```json
 {
-  "vehicle_side": "front",
-  "vehicle_info": {
+  "document_type": "statement_front",
+  "policyholder_information": {
+    "name": "John Peterson",
+    "address": "1142 Pinecrest Avenue, Springfield, OH 45503",
+    "phone": "(937) 555-2319",
+    "email": "john.peterson@email.com",
+    "policy_number": "LIAB-AUTO-001"
+  },
+  "vehicle_information": {
+    "year": "2004",
     "make": "Honda",
     "model": "Accord",
-    "year": "2023",
-    "vin": "1HGCV1F34PA123456"
+    "color": "Silver",
+    "vin": "1HGCH56404A123456",
+    "license_plate": "OH-GHR1984"
   },
-  "front_specific": {
-    "windshield_damage": "intact",
-    "front_bumper_damage": "dented",
-    "headlights_damage": "cracked",
-    "hood_damage": "scratched",
-    "front_damage_severity": "moderate"
+  "accident_information": {
+    "date_of_incident": "2025-07-17",
+    "time": "8:30 AM",
+    "location": "Parking Lot, 2325 Main Street, Springfield, OH 45503",
+    "is_us_territory": true
   },
-  "incident_details": {
-    "date": "2026-01-03",
-    "description": "Vehicle collision while parked"
-  }
+  "description_of_damages": [
+    {
+      "part_name": "front bumper",
+      "damage_description": "dented",
+      "severity": "moderate",
+      "repair_or_replace": "repair"
+    }
+  ],
+  "confidence": "high"
 }
 ```
 
@@ -167,10 +184,11 @@ The JSON Structuring Agent takes raw OCR text and converts it into a standardize
 The two agents work together in a sequential pipeline:
 
 ```
-┌─────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
-│  Claim Image    │───▶│     OCR Agent        │───▶│  JSON Structuring   │
-│  (JPEG/PNG/PDF) │    │  (Mistral Doc AI)    │    │  Agent (GPT-4.1)    │
-└─────────────────┘    └──────────────────────┘    └─────────────────────┘
+┌─────────────────┐    ┌──────────────────────┐    ┌──────────────────────────┐
+│  Claim Image    │───▶│     OCR Agent        │───▶│  Statements Data         │
+│  (JPEG/PNG/PDF) │    │  (Mistral Doc AI)    │    │  Extraction Agent        │
+│                 │    │                      │    │  (GPT-4.1)               │
+└─────────────────┘    └──────────────────────┘    └──────────────────────────┘
                               │                            │
                               ▼                            ▼
                        Raw OCR Text               Structured Claim JSON
@@ -179,8 +197,8 @@ The two agents work together in a sequential pipeline:
 
 **Step 1**: Submit a claim image to the OCR Agent
 **Step 2**: OCR Agent extracts all text and saves to `ocr_results/`
-**Step 3**: Pass the OCR output to the JSON Structuring Agent
-**Step 4**: Structuring Agent creates standardized JSON for downstream processing
+**Step 3**: Pass the OCR output to the Statements Data Extraction Agent
+**Step 4**: Extraction Agent creates standardized JSON for downstream processing
 
 ---
 
