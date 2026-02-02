@@ -132,7 +132,7 @@ def extract_text_with_ocr(image_path: str) -> str:
             response.raise_for_status()
             
             result = response.json()
-            logger.info(f"Received response from Mistral Document AI")
+            logger.info("Received response from Mistral Document AI")
             
             # Extract text from response
             ocr_text = ""
@@ -155,7 +155,7 @@ def extract_text_with_ocr(image_path: str) -> str:
                 # Fallback: OpenAI format
                 ocr_text = result["choices"][0].get("message", {}).get("content", "")
             else:
-                logger.warning(f"Unexpected response format from Mistral API")
+                logger.warning("Unexpected response format from Mistral API")
                 ocr_text = ""
             
             # Build success response
@@ -269,13 +269,13 @@ You are designed to be a reliable, accurate OCR processing service for insurance
             )
             
             print(f"✅ Created OCR Agent: {agent.name} (version {agent.version})")
-            print(f"   Agent visible in Foundry portal\n")
+            print("   Agent visible in Foundry portal\n")
             
             # Get OpenAI client for responses
             openai_client = project_client.get_openai_client()
             
             # Test the agent
-            print(f"🧪 Testing the agent with OCR extraction...")
+            print("🧪 Testing the agent with OCR extraction...")
             print(f"   Processing: {test_image_path}\n")
             
             if not os.path.exists(test_image_path):
@@ -311,7 +311,7 @@ Provide a summary of what text was found and what it represents."""
                         # Execute the OCR function
                         ocr_result_json = extract_text_with_ocr(**args)
                         
-                        print(f"   ✓ Function executed successfully")
+                        print("   ✓ Function executed successfully")
                         
                         # Save OCR result to JSON file
                         base_name = os.path.splitext(os.path.basename(test_image_path))[0]
@@ -334,7 +334,7 @@ Provide a summary of what text was found and what it represents."""
             
             # If function was called, get final response
             if input_list:
-                print(f"\n🤖 Getting agent's final response...\n")
+                print("\n🤖 Getting agent's final response...\n")
                 
                 final_response = openai_client.responses.create(
                     input=input_list,

@@ -10,9 +10,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY challenge-4/workflow_orchestrator.py .
 COPY challenge-4/api_server.py .
 
-# Add challenge-2 agents for OCR agent
+# Add challenge-2 agents
 RUN mkdir -p /app/challenge-2/agents
 COPY challenge-2/agents/ocr_agent.py /app/challenge-2/agents/
+COPY challenge-2/agents/statements_data_extraction_agent.py /app/challenge-2/agents/
+COPY challenge-2/agents/policy_evaluation_agent.py /app/challenge-2/agents/
 
 # Expose API port
 EXPOSE 8080

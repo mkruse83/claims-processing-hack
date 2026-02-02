@@ -3,7 +3,7 @@
 **Expected Duration:** 60 minutes
 
 ## Overview
-In this challenge, you'll work with two specialized AI agents that handle document processing for insurance claims. These agents work together to extract text from claim documents and convert that raw text into structured data ready for downstream processing.
+In this challenge, you'll explore different mechanisms for extracting text from pictures and processing that text with LLMs to extract structured information. You'll work with specialized AI agents that handle document processing for insurance claims: first extracting raw text from images using OCR, then using an LLM to parse and structure that text into standardized claim data, and finally using another agent to evaluate policy coverage and liability using Azure AI Search as a knowledge source.
 
 ## The Evolution of Functions: From Traditional Systems to AI Agents
 
@@ -53,30 +53,55 @@ python ocr_agent.py ../../challenge-0/data/statements/crash1_front.jpeg
 
 **Expected output:** JSON containing the extracted text from the claim statement, saved to the `ocr_results/` folder.
 
-### Task 2: Run the JSON Structuring Agent
+### Task 2: Run the Statements Data Extraction Agent
 
-The JSON Structuring Agent converts raw OCR text into structured claim data using GPT-4.1-mini.
+The Statements Data Extraction Agent converts raw OCR text into structured insurance claim data using GPT-4.1-mini.
 
 ```bash
 cd challenge-2/agents
 
-# Run the JSON structuring agent on the OCR output from Task 1
-python json_structuring_agent.py ../ocr_results/crash1_front_ocr_result.json
+# Run the statements data extraction agent on the OCR output from Task 1
+python statements_data_extraction_agent.py ../ocr_results/crash1_front_ocr_result.json
 ```
 
 **What it does:**
 - Reads the OCR output from Task 1
 - Uses GPT-4.1-mini to parse and structure the text
-- Extracts key claim fields (vehicle info, damage assessment, incident details)
+- Extracts key claim fields (policyholder info, vehicle info, accident details, damages, signatures, etc.)
 - Returns well-structured JSON ready for downstream processing
 
-**Expected output:** Structured JSON with fields like vehicle information, damage severity, incident details, and claim assessment.
+**Expected output:** Structured JSON with fields like policyholder information, vehicle information, accident information, damage descriptions, witness information, police report details, and signature verification.
+
+---
+
+### Task 3: Run the Policy Evaluation Agent
+
+The Policy Evaluation Agent uses Azure AI Foundry Agents with Azure AI Search as a knowledge source to match the structured claim against policy documents and estimate coverage and liability.
+
+```bash
+cd challenge-2/agents
+
+# Run the policy evaluation agent on the structured claim output from Task 2
+python policy_evaluation_agent.py ../ocr_results/crash1_front_ocr_result_structured.json
+```
+
+**What it does:**
+- Reads the structured claim JSON produced by `statements_data_extraction_agent.py`
+- Ensures an Azure AI Search index asset exists in your Azure AI Project (using `AZURE_AI_CONNECTION_ID` and `AI_SEARCH_INDEX_NAME` to create an `AzureAISearchIndex` if needed)
+- Attaches that index as a knowledge source to an Azure AI agent using `AzureAISearchAgentTool`
+- Uses the index content (policy markdown files you ingested in Challenge 1) to:
+  - Find the best matching policy
+  - Assess coverage and limits
+  - Estimate liability and claim validity
+- Appends a `policy_evaluation` object to the claim JSON and writes `*_with_policy_evaluation.json`
+
+**Expected output:** Enriched JSON with a `policy_evaluation` field that includes matched policy information, coverage assessment, liability assessment, claim validity, and notes, along with metadata that records which Azure AI Search index asset was used.
 
 ---
 
 ## Agent Implementation
 
-This challenge includes two specialized agents that work together in a document processing pipeline:
+This challenge includes three specialized agents that work together in a document processing pipeline:
 
 ### 1. OCR Agent (`ocr_agent.py`)
 
@@ -112,9 +137,9 @@ The OCR Agent is responsible for extracting raw text from images and documents u
 
 ---
 
-### 2. JSON Structuring Agent (`json_structuring_agent.py`)
+### 2. Statements Data Extraction Agent (`statements_data_extraction_agent.py`)
 
-The JSON Structuring Agent takes raw OCR text and converts it into a standardized, structured JSON format suitable for claims processing.
+The Statements Data Extraction Agent takes raw OCR text and converts it into a standardized, structured JSON format suitable for insurance claims processing.
 
 **Technology Stack:**
 - **Model**: GPT-4.1-mini via Azure AI Foundry
@@ -126,39 +151,85 @@ The JSON Structuring Agent takes raw OCR text and converts it into a standardize
 
 1. **Input Processing**: Reads the OCR output from the previous step and extracts the raw text content
 
-2. **Vehicle Side Detection**: Automatically detects if the image shows the front or back of a vehicle to apply appropriate extraction rules
+2. **Document Type Detection**: Automatically detects if the text is from a statement front or back page
 
 3. **Intelligent Structuring**: Uses GPT-4.1-mini with specialized prompts to extract and categorize information into predefined fields:
-   - Vehicle information (make, model, year, VIN)
-   - Damage assessment (severity, affected areas)
-   - Incident details (date, location, description)
-   - Side-specific damage (front bumper, headlights, rear bumper, taillights, etc.)
+   - Policyholder information (name, address, phone, email, policy number)
+   - Vehicle information (year, make, model, color, VIN, license plate)
+   - Accident information (date, time, location, US territory)
+   - Description of incident (with validation flags)
+   - Description of damages (parts, severity, repair vs replace)
+   - Witness information (with matching validation)
+   - Police report details
+   - Signature verification
 
 4. **Validation**: Ensures all required fields are populated and formats are consistent
 
 **Example Output:**
 ```json
 {
-  "vehicle_side": "front",
-  "vehicle_info": {
+  "document_type": "statement_front",
+  "policyholder_information": {
+    "name": "John Peterson",
+    "address": "1142 Pinecrest Avenue, Springfield, OH 45503",
+    "phone": "(937) 555-2319",
+    "email": "john.peterson@email.com",
+    "policy_number": "LIAB-AUTO-001"
+  },
+  "vehicle_information": {
+    "year": "2004",
     "make": "Honda",
     "model": "Accord",
-    "year": "2023",
-    "vin": "1HGCV1F34PA123456"
+    "color": "Silver",
+    "vin": "1HGCH56404A123456",
+    "license_plate": "OH-GHR1984"
   },
-  "front_specific": {
-    "windshield_damage": "intact",
-    "front_bumper_damage": "dented",
-    "headlights_damage": "cracked",
-    "hood_damage": "scratched",
-    "front_damage_severity": "moderate"
+  "accident_information": {
+    "date_of_incident": "2025-07-17",
+    "time": "8:30 AM",
+    "location": "Parking Lot, 2325 Main Street, Springfield, OH 45503",
+    "is_us_territory": true
   },
-  "incident_details": {
-    "date": "2026-01-03",
-    "description": "Vehicle collision while parked"
-  }
+  "description_of_damages": [
+    {
+      "part_name": "front bumper",
+      "damage_description": "dented",
+      "severity": "moderate",
+      "repair_or_replace": "repair"
+    }
+  ],
+  "confidence": "high"
 }
 ```
+
+---
+
+### 3. Policy Evaluation Agent (`policy_evaluation_agent.py`)
+
+The Policy Evaluation Agent takes the structured claim JSON and uses Azure AI Search (via an index asset in your Azure AI Project) to ground its reasoning in real policy documents before estimating coverage and liability.
+
+**Technology Stack:**
+- **Model**: GPT-4.1-mini via Azure AI Foundry
+- **SDK**: Azure AI Projects SDK with `PromptAgentDefinition` and `AzureAISearchAgentTool`
+- **Search**: Azure AI Search index created in Challenge 1, attached as an `AzureAISearchIndex` asset
+- **Input**: Structured claim JSON from the Statements Data Extraction Agent
+- **Output**: Original claim JSON plus a `policy_evaluation` object
+
+**How It Works:**
+
+1. **Index Asset Management**: Uses `AZURE_AI_CONNECTION_ID` and `AI_SEARCH_INDEX_NAME` to create or reuse an `AzureAISearchIndex` asset in the Azure AI Project (via `project_client.indexes.create_or_update`), so you don't have to manually register the index asset.
+2. **Knowledge-Enhanced Agent**: Configures an agent with `AzureAISearchAgentTool`, pointing it at the search index asset as a knowledge source for policy documents.
+3. **Policy Matching and Evaluation**: The agent queries the index to:
+   - Retrieve the most relevant policy markdown documents
+   - Select the best matching policy for the claim
+   - Assess coverage applicability, deductible, and potential limits
+   - Estimate fault and recommend whether the claim appears valid
+4. **Result Enrichment**: Appends a structured `policy_evaluation` object and metadata (including the search index asset id) to the claim JSON.
+
+**What This Demonstrates:**
+- How to wire Azure AI Search into an Azure AI Foundry agent as a first-class tool
+- How to use `AZURE_AI_CONNECTION_ID` to connect an AI Project to an existing Cognitive Search resource
+- How to programmatically create and reuse an `AzureAISearchIndex` asset so agents can search your policy corpus without additional manual setup
 
 ---
 
@@ -167,10 +238,11 @@ The JSON Structuring Agent takes raw OCR text and converts it into a standardize
 The two agents work together in a sequential pipeline:
 
 ```
-┌─────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
-│  Claim Image    │───▶│     OCR Agent        │───▶│  JSON Structuring   │
-│  (JPEG/PNG/PDF) │    │  (Mistral Doc AI)    │    │  Agent (GPT-4.1)    │
-└─────────────────┘    └──────────────────────┘    └─────────────────────┘
+┌─────────────────┐    ┌──────────────────────┐    ┌──────────────────────────┐
+│  Claim Image    │───▶│     OCR Agent        │───▶│  Statements Data         │
+│  (JPEG/PNG/PDF) │    │  (Mistral Doc AI)    │    │  Extraction Agent        │
+│                 │    │                      │    │  (GPT-4.1)               │
+└─────────────────┘    └──────────────────────┘    └──────────────────────────┘
                               │                            │
                               ▼                            ▼
                        Raw OCR Text               Structured Claim JSON
@@ -179,8 +251,9 @@ The two agents work together in a sequential pipeline:
 
 **Step 1**: Submit a claim image to the OCR Agent
 **Step 2**: OCR Agent extracts all text and saves to `ocr_results/`
-**Step 3**: Pass the OCR output to the JSON Structuring Agent
-**Step 4**: Structuring Agent creates standardized JSON for downstream processing
+**Step 3**: Pass the OCR output to the Statements Data Extraction Agent
+**Step 4**: Extraction Agent creates standardized JSON for downstream processing
+**Step 5**: Pass the structured JSON to the Policy Evaluation Agent, which uses Azure AI Search to ground policy decisions and write an enriched `*_with_policy_evaluation.json` file
 
 ---
 

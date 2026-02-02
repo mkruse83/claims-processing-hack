@@ -55,6 +55,42 @@
     "source_file": "../../challenge-0/data/statements/crash1_front.jpeg",
     "processing_timestamp": "2026-02-01T15:21:47.583488",
     "agent_model": "gpt-4.1-mini",
-    "original_text_length": 1032
+    "original_text_length": 1032,
+    "policy_evaluation_agent": {
+      "name": "PolicyEvaluationAgent",
+      "version": "1",
+      "ai_search_index_asset_id": "insurance-documents-index/versions/1"
+    }
+  },
+  "policy_evaluation": {
+    "matched_policy": {
+      "id": "LIAB-AUTO-001",
+      "title": "Liability Only Auto Insurance Policy",
+      "score": 0.95,
+      "summary": "This policy provides liability coverage for damages and injuries you cause to others but does not cover damage to your own vehicle or injuries to yourself. It includes bodily injury and property damage liability with state minimum limits.",
+      "raw_document_reference": "liability_only_policy.md"
+    },
+    "coverage_assessment": {
+      "coverage_applicability": "not_covered",
+      "estimated_company_liability_amount": 0,
+      "deductible_applicable": false,
+      "deductible_amount": 0,
+      "limits_may_be_exceeded": false,
+      "relevant_policy_sections": "Section 1 Coverage Overview and Section 4 What's NOT Covered specify that damage to the policyholder's own vehicle is not covered under this liability-only policy."
+    },
+    "liability_assessment": {
+      "at_fault_party": "third_party",
+      "estimated_fault_split": {
+        "policyholder_percent": 0,
+        "third_party_percent": 100
+      },
+      "key_factors": "The policyholder's vehicle was legally parked and stationary; the third party driver misjudged distance and struck the policyholder's vehicle, causing damage. The third party admitted fault and waited for police."
+    },
+    "claim_validity": {
+      "is_claim_valid": true,
+      "primary_reasons": "The claim is valid as the third party is at fault and the incident is well described with witness confirmation and third party cooperation. However, the policyholder's own policy does not cover vehicle damage.",
+      "confidence": "high"
+    },
+    "notes": "The policyholder holds a liability-only policy which excludes coverage for damage to their own vehicle. The third party is liable for the damage, so the policyholder should pursue a claim against the third party's insurance. Lack of police report and witness contact details may complicate third party claim but does not invalidate the claim itself."
   }
 }
